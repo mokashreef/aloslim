@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="description" content="المسلم - تطبيق إسلامي شامل لمواقيت الصلاة والقرآن الكريم والأذكار">
+  <meta name="theme-color" content="#1B5E20">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="المسلم">
+
+  <title>المسلم | تطبيق إسلامي شامل</title>
+
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🕌%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <!-- App Container -->
+  <div id="app">
+
+    <!-- ======================== HOME PAGE ======================== -->
+    <section id="page-home" class="page active">
+      <!-- Greeting -->
+      <div class="home-greeting">
+        <div class="bismillah">بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ</div>
+        <div class="greeting-text" id="greeting-text">السلام عليكم</div>
+        <div class="date-hijri" id="date-hijri">جارٍ التحميل...</div>
+        <div class="date-miladi" id="date-miladi"></div>
+      </div>
+
+      <!-- Next Prayer Countdown -->
+      <div class="next-prayer-card" id="next-prayer-card">
+        <div class="next-prayer-label">الصلاة القادمة</div>
+        <div class="next-prayer-name" id="next-prayer-name">--</div>
+        <div class="next-prayer-time" id="next-prayer-time">--:--</div>
+        <div class="countdown-display" id="countdown-display">
+          <div class="countdown-unit">
+            <span class="number" id="cd-hours">00</span>
+            <span class="label">ساعة</span>
+          </div>
+          <span class="countdown-separator">:</span>
+          <div class="countdown-unit">
+            <span class="number" id="cd-minutes">00</span>
+            <span class="label">دقيقة</span>
+          </div>
+          <span class="countdown-separator">:</span>
+          <div class="countdown-unit">
+            <span class="number" id="cd-seconds">00</span>
+            <span class="label">ثانية</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Prayer Times Grid -->
+      <div class="prayer-times-grid" id="prayer-times-grid">
+        <div class="prayer-time-item" data-prayer="Fajr">
+          <div class="prayer-icon">🌙</div>
+          <div class="prayer-name">الفجر</div>
+          <div class="prayer-time" id="time-fajr">--:--</div>
+        </div>
+        <div class="prayer-time-item" data-prayer="Sunrise">
+          <div class="prayer-icon">🌅</div>
+          <div class="prayer-name">الشروق</div>
+          <div class="prayer-time" id="time-sunrise">--:--</div>
+        </div>
+        <div class="prayer-time-item" data-prayer="Dhuhr">
+          <div class="prayer-icon">☀️</div>
+          <div class="prayer-name">الظهر</div>
+          <div class="prayer-time" id="time-dhuhr">--:--</div>
+        </div>
+        <div class="prayer-time-item" data-prayer="Asr">
+          <div class="prayer-icon">🌤️</div>
+          <div class="prayer-name">العصر</div>
+          <div class="prayer-time" id="time-asr">--:--</div>
+        </div>
+        <div class="prayer-time-item" data-prayer="Maghrib">
+          <div class="prayer-icon">🌇</div>
+          <div class="prayer-name">المغرب</div>
+          <div class="prayer-time" id="time-maghrib">--:--</div>
+        </div>
+        <div class="prayer-time-item" data-prayer="Isha">
+          <div class="prayer-icon">🌃</div>
+          <div class="prayer-name">العشاء</div>
+          <div class="prayer-time" id="time-isha">--:--</div>
+        </div>
+      </div>
+
+      <!-- Quick Actions -->
+      <div class="quick-actions">
+        <button class="quick-action-btn" onclick="navigateTo('quran')">
+          <div class="action-icon action-green">📖</div>
+          <div class="action-text">القرآن الكريم</div>
+        </button>
+        <button class="quick-action-btn" onclick="navigateTo('azkar')">
+          <div class="action-icon action-gold">📿</div>
+          <div class="action-text">الأذكار</div>
+        </button>
+        <button class="quick-action-btn" onclick="navigateTo('live')">
+          <div class="action-icon action-blue">📻</div>
+          <div class="action-text">بث مباشر</div>
+        </button>
+        <button class="quick-action-btn" onclick="showQibla()">
+          <div class="action-icon action-purple">🧭</div>
+          <div class="action-text">اتجاه القبلة</div>
+        </button>
+      </div>
+
+      <!-- Daily Suggestion -->
+      <div class="daily-suggestion" id="daily-suggestion">
+        <div class="suggestion-label">✨ عبادة مقترحة</div>
+        <div class="suggestion-text" id="suggestion-text">جارٍ التحميل...</div>
+        <div class="suggestion-source" id="suggestion-source"></div>
+      </div>
+    </section>
+
+    <!-- ======================== QURAN PAGE ======================== -->
+    <section id="page-quran" class="page">
+      <div class="page-header">
+        <h1>📖 القرآن الكريم</h1>
+        <button class="header-icon" id="quran-list-btn" onclick="toggleSurahList()">☰</button>
+      </div>
+
+      <!-- Controls -->
+      <div class="quran-controls">
+        <select class="surah-selector" id="surah-selector" onchange="loadSurah(this.value)">
+          <option value="">اختر سورة...</option>
+        </select>
+        <select class="reciter-select" id="reciter-select">
+          <option value="ar.alafasy">مشاري العفاسي</option>
+          <option value="ar.abdulbasitmurattal">عبد الباسط (مرتل)</option>
+          <option value="ar.husary">محمود الحصري</option>
+          <option value="ar.minshawi">محمد المنشاوي</option>
+          <option value="ar.abdurrahmaansudais">عبد الرحمن السديس</option>
+          <option value="ar.saaborimahir">ماهر المعيقلي</option>
+        </select>
+      </div>
+
+      <!-- Reading Stats -->
+      <div class="reading-stats" id="reading-stats">
+        <div class="stat-item">
+          <div class="stat-number" id="stat-pages">0</div>
+          <div class="stat-label">صفحات اليوم</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-number" id="stat-time">0</div>
+          <div class="stat-label">دقائق قراءة</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-number" id="stat-streak">0</div>
+          <div class="stat-label">أيام متتالية</div>
+        </div>
+      </div>
+
+      <!-- Surah Header -->
+      <div class="surah-header" id="surah-header" style="display:none;">
+        <div class="bismillah-text">بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ</div>
+        <div class="surah-name" id="surah-name-display"></div>
+        <div class="surah-info" id="surah-info-display"></div>
+      </div>
+
+      <!-- Ayahs Container -->
+      <div id="ayah-container"></div>
+
+      <!-- Loading -->
+      <div id="quran-loading" style="display:none;">
+        <div class="spinner"></div>
+        <div class="loading-text">جارٍ تحميل السورة...</div>
+      </div>
+
+      <!-- Empty State -->
+      <div class="empty-state" id="quran-empty">
+        <div class="icon">📖</div>
+        <p>اختر سورة لبدء القراءة</p>
+      </div>
+
+      <!-- Audio Player -->
+      <div class="quran-audio-player" id="quran-audio-player">
+        <div class="audio-player-top">
+          <div>
+            <div class="audio-now-playing" id="audio-now-playing">الآية 1</div>
+            <div class="audio-reciter-name" id="audio-reciter-display">مشاري العفاسي</div>
+          </div>
+          <button class="ayah-action-btn" onclick="closeAudioPlayer()" style="font-size:0.7rem;">✕</button>
+        </div>
+        <div class="audio-progress" onclick="seekAudio(event)">
+          <div class="audio-progress-bar" id="audio-progress-bar"></div>
+        </div>
+        <div class="audio-controls">
+          <button class="audio-btn" onclick="prevAyah()">⏮</button>
+          <button class="audio-btn" onclick="toggleRepeat()" id="repeat-btn">🔁</button>
+          <button class="audio-btn play-btn" id="play-btn" onclick="togglePlay()">▶</button>
+          <button class="audio-btn" onclick="nextAyah()">⏭</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================== AZKAR PAGE ======================== -->
+    <section id="page-azkar" class="page">
+      <div class="page-header">
+        <h1>📿 الأذكار</h1>
+        <button class="header-icon" id="azkar-reset-btn" onclick="resetAzkarCounters()">↺</button>
+      </div>
+
+      <!-- Categories -->
+      <div class="azkar-categories" id="azkar-categories">
+        <button class="azkar-category-btn active" data-category="morning" onclick="loadAzkarCategory('morning')">🌅 أذكار الصباح</button>
+        <button class="azkar-category-btn" data-category="evening" onclick="loadAzkarCategory('evening')">🌆 أذكار المساء</button>
+        <button class="azkar-category-btn" data-category="afterPrayer" onclick="loadAzkarCategory('afterPrayer')">🕌 بعد الصلاة</button>
+        <button class="azkar-category-btn" data-category="sleep" onclick="loadAzkarCategory('sleep')">🌙 أذكار النوم</button>
+        <button class="azkar-category-btn" data-category="misc" onclick="loadAzkarCategory('misc')">✨ أذكار متنوعة</button>
+      </div>
+
+      <!-- Azkar Container -->
+      <div id="azkar-container"></div>
+    </section>
+
+    <!-- ======================== LIVE QURAN PAGE ======================== -->
+    <section id="page-live" class="page">
+      <div class="page-header">
+        <h1>📻 البث المباشر</h1>
+      </div>
+
+      <!-- Hero -->
+      <div class="live-hero" id="live-hero">
+        <div class="live-badge">
+          <span class="live-dot"></span>
+          مباشر
+        </div>
+        <div class="live-title">🕌 إذاعة القرآن الكريم</div>
+        <div class="live-subtitle" id="live-now-playing">اختر إذاعة للاستماع</div>
+        <div class="waveform paused" id="waveform">
+          <div class="bar"></div>
+          <div class="bar"></div>
+          <div class="bar"></div>
+          <div class="bar"></div>
+          <div class="bar"></div>
+          <div class="bar"></div>
+          <div class="bar"></div>
+          <div class="bar"></div>
+          <div class="bar"></div>
+        </div>
+      </div>
+
+      <!-- Radio Stations -->
+      <div class="radio-stations" id="radio-stations"></div>
+
+      <!-- Volume -->
+      <div class="volume-control">
+        <span>🔈</span>
+        <input type="range" class="volume-slider" id="volume-slider" min="0" max="100" value="80" oninput="setVolume(this.value)">
+        <span>🔊</span>
+      </div>
+    </section>
+
+    <!-- ======================== SETTINGS PAGE ======================== -->
+    <section id="page-settings" class="page">
+      <div class="page-header">
+        <h1>⚙️ المزيد</h1>
+      </div>
+
+      <!-- Daily Intention -->
+      <div class="intention-card">
+        <h3>🎯 نيّتك اليوم</h3>
+        <textarea class="intention-input" id="intention-input" placeholder="ماذا تنوي فعله اليوم من عبادات؟" oninput="saveIntention()"></textarea>
+      </div>
+
+      <!-- Worship Log -->
+      <div class="card" style="margin-bottom: var(--space-lg);">
+        <div class="card-header">
+          <div class="icon" style="background:var(--primary-50);color:var(--primary-700);">📊</div>
+          <h3>سجل العبادات</h3>
+        </div>
+        <div class="worship-log" id="worship-log"></div>
+      </div>
+
+      <!-- Settings -->
+      <div class="settings-section">
+        <div class="settings-section-title">الإعدادات</div>
+        <div class="settings-group">
+          <div class="settings-item">
+            <div class="settings-item-info">
+              <div class="icon action-purple">🌙</div>
+              <div class="text">
+                <h4>الوضع الليلي</h4>
+                <p>تبديل مظهر التطبيق</p>
+              </div>
+            </div>
+            <label class="toggle">
+              <input type="checkbox" id="dark-mode-toggle" onchange="toggleDarkMode()">
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+
+          <div class="settings-item">
+            <div class="settings-item-info">
+              <div class="icon action-green">🕌</div>
+              <div class="text">
+                <h4>المذهب</h4>
+                <p>لحساب مواقيت الصلاة</p>
+              </div>
+            </div>
+            <select class="reciter-select" id="madhab-select" onchange="saveMadhab()" style="font-size:0.78rem;">
+              <option value="0">شافعي</option>
+              <option value="1">حنفي</option>
+            </select>
+          </div>
+
+          <div class="settings-item">
+            <div class="settings-item-info">
+              <div class="icon action-gold">🔔</div>
+              <div class="text">
+                <h4>تذكير الأذكار</h4>
+                <p>تنبيهات ذكية غير مزعجة</p>
+              </div>
+            </div>
+            <label class="toggle">
+              <input type="checkbox" id="azkar-reminder-toggle" onchange="toggleAzkarReminder()" checked>
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+
+          <div class="settings-item">
+            <div class="settings-item-info">
+              <div class="icon action-blue">🔕</div>
+              <div class="text">
+                <h4>وضع الخشوع</h4>
+                <p>تفعيل عند دخول وقت الصلاة</p>
+              </div>
+            </div>
+            <label class="toggle">
+              <input type="checkbox" id="khushoo-toggle" onchange="toggleKhushooMode()" checked>
+              <span class="toggle-slider"></span>
+            </label>
+          </div>
+        </div>
+      </div>
+
+      <!-- About -->
+      <div class="settings-section">
+        <div class="settings-section-title">حول التطبيق</div>
+        <div class="settings-group">
+          <div class="settings-item">
+            <div class="settings-item-info">
+              <div class="icon action-green">🕌</div>
+              <div class="text">
+                <h4>المسلم</h4>
+                <p>الإصدار 1.0.0</p>
+              </div>
+            </div>
+          </div>
+          <div class="settings-item">
+            <div class="settings-item-info">
+              <div class="icon action-gold">💝</div>
+              <div class="text">
+                <h4>ادعُ لنا</h4>
+                <p>اللهم اجعل هذا العمل خالصاً لوجهك الكريم</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  <!-- Bottom Navigation -->
+  <nav class="bottom-nav">
+    <button class="nav-item active" data-page="home" onclick="navigateTo('home')">
+      <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+      <span>الرئيسية</span>
+    </button>
+    <button class="nav-item" data-page="quran" onclick="navigateTo('quran')">
+      <svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/><line x1="8" y1="7" x2="16" y2="7"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+      <span>القرآن</span>
+    </button>
+    <button class="nav-item" data-page="azkar" onclick="navigateTo('azkar')">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+      <span>الأذكار</span>
+    </button>
+    <button class="nav-item" data-page="live" onclick="navigateTo('live')">
+      <svg viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/><path d="M5 3L2 6m17-3l3 3M5 21l-3-3m17 3l3-3"/></svg>
+      <span>البث</span>
+    </button>
+    <button class="nav-item" data-page="settings" onclick="navigateTo('settings')">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      <span>المزيد</span>
+    </button>
+  </nav>
+
+  <!-- Qibla Modal -->
+  <div class="modal-overlay" id="qibla-modal">
+    <div class="modal-content">
+      <div class="modal-handle"></div>
+      <h3 style="text-align:center;margin-bottom:var(--space-lg);font-size:1.2rem;">🧭 اتجاه القبلة</h3>
+      <div class="qibla-compass" id="qibla-compass">
+        <div class="compass-ring">
+          <div class="compass-arrow" id="qibla-arrow"></div>
+          <div class="compass-center"></div>
+        </div>
+      </div>
+      <p class="compass-label" id="qibla-label">جارٍ تحديد الاتجاه...</p>
+      <p class="compass-label" style="margin-top:var(--space-sm);font-size:0.75rem;color:var(--text-muted);" id="qibla-degree"></p>
+      <button onclick="closeModal('qibla-modal')" style="display:block;margin:var(--space-lg) auto 0;padding:var(--space-sm) var(--space-xl);background:var(--accent);color:white;border-radius:var(--radius-xl);font-weight:600;font-size:0.9rem;">إغلاق</button>
+    </div>
+  </div>
+
+  <!-- Surah List Modal -->
+  <div class="modal-overlay" id="surah-list-modal">
+    <div class="modal-content surah-list-modal" style="max-height:80vh;">
+      <div class="modal-handle"></div>
+      <h3 style="text-align:center;margin-bottom:var(--space-md);font-size:1.1rem;">فهرس السور</h3>
+      <input type="text" class="quran-search-input" id="surah-search" placeholder="🔍 ابحث عن سورة..." oninput="filterSurahs(this.value)" style="width:100%;margin-bottom:var(--space-md);">
+      <div id="surah-list-container" style="max-height:55vh;overflow-y:auto;"></div>
+    </div>
+  </div>
+
+  <!-- Khushoo Mode Overlay -->
+  <div class="khushoo-overlay" id="khushoo-overlay">
+    <div class="prayer-name-large" id="khushoo-prayer-name">الصلاة</div>
+    <div class="khushoo-text">حان وقت الصلاة... أقبل على ربك</div>
+    <button class="dismiss-btn" onclick="dismissKhushoo()">حسناً</button>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast">
+    <span id="toast-icon">✅</span>
+    <span id="toast-text"></span>
+  </div>
+
+  <!-- Scripts -->
+  <script src="js/app.js"></script>
+  <script src="js/home.js"></script>
+  <script src="js/quran.js"></script>
+  <script src="js/azkar.js"></script>
+  <script src="js/live.js"></script>
+  <script src="js/settings.js"></script>
+</body>
+</html>

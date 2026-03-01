@@ -1,0 +1,27 @@
+{
+  "name": "المسلم",
+  "short_name": "المسلم",
+  "description": "تطبيق إسلامي شامل - مواقيت الصلاة، القرآن الكريم، الأذكار، والمزيد",
+  "start_url": "/index.html",
+  "display": "standalone",
+  "orientation": "portrait",
+  "dir": "rtl",
+  "lang": "ar",
+  "theme_color": "#1B5E20",
+  "background_color": "#FDF8F0",
+  "categories": ["lifestyle", "education"],
+  "icons": [
+    {
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='128' fill='%231B5E20'/%3E%3Ctext x='256' y='320' text-anchor='middle' font-size='280' fill='white'%3E🕌%3C/text%3E%3C/svg%3E",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' rx='48' fill='%231B5E20'/%3E%3Ctext x='96' y='125' text-anchor='middle' font-size='110' fill='white'%3E🕌%3C/text%3E%3C/svg%3E",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

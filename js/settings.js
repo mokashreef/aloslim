@@ -8,11 +8,11 @@ function initSettings() {
   if (settingsInitialized) return;
   settingsInitialized = true;
 
-  // Load saved settings
   loadIntention();
   loadMadhab();
   loadWorshipLog();
   loadToggles();
+  updateAppInfo();
 }
 
 // ============ Daily Intention ============
@@ -21,7 +21,8 @@ function loadIntention() {
   const saved = loadData('intention', { date: '', text: '' });
 
   if (saved.date === today) {
-    document.getElementById('intention-input').value = saved.text;
+    const el = document.getElementById('intention-input');
+    if (el) el.value = saved.text;
   }
 }
 
@@ -36,25 +37,33 @@ function saveIntention() {
 // ============ Madhab ============
 function loadMadhab() {
   const madhab = localStorage.getItem('almuslim_madhab') || '0';
-  document.getElementById('madhab-select').value = madhab;
+  const el = document.getElementById('madhab-select');
+  if (el) el.value = madhab;
 }
 
 function saveMadhab() {
   const madhab = document.getElementById('madhab-select').value;
   localStorage.setItem('almuslim_madhab', madhab);
-  // Clear cached prayer times to refetch
   localStorage.removeItem('almuslim_prayerTimesCache');
   showToast('تم تحديث المذهب. سيتم تحديث المواقيت.', '🕌');
   if (typeof fetchPrayerTimes === 'function') fetchPrayerTimes();
+}
+
+function refreshPrayerTimes() {
+  localStorage.removeItem('almuslim_prayerTimesCache');
+  if (typeof fetchPrayerTimes === 'function') {
+    fetchPrayerTimes();
+    showToast('جارٍ تحديث مواقيت الصلاة', '🔄');
+  }
 }
 
 // ============ Worship Log ============
 function loadWorshipLog() {
   const log = loadData('worshipLog', {});
   const container = document.getElementById('worship-log');
+  if (!container) return;
   container.innerHTML = '';
 
-  // Show last 28 days
   const today = new Date();
   for (let i = 27; i >= 0; i--) {
     const date = new Date(today);
@@ -71,7 +80,6 @@ function loadWorshipLog() {
       div.className += ' partial';
     }
 
-    // Highlight today
     if (i === 0) {
       div.style.fontWeight = '800';
     }
@@ -99,16 +107,58 @@ function toggleWorshipDay(key, element) {
   saveData('worshipLog', log);
 }
 
+function updateAppInfo() {
+  const appVersionEl = document.getElementById('app-version');
+  if (appVersionEl) {
+    appVersionEl.textContent = 'الإصدار 1.1.0';
+  }
+
+  const lastSyncEl = document.getElementById('last-sync');
+  if (lastSyncEl) {
+    const now = new Date();
+    lastSyncEl.textContent = `آخر تحديث: ${now.toLocaleTimeString('ar', { hour: '2-digit', minute: '2-digit' })}`;
+  }
+}
+
+function resetAppData() {
+  const keysToClear = [
+    'almuslim_prayerTimesCache',
+    'almuslim_intention',
+    'almuslim_worshipLog',
+    'almuslim_lastSurah',
+    'almuslim_readingStats',
+    'almuslim_khushoo',
+    'almuslim_azkarReminder',
+    'almuslim_currentPage',
+    'almuslim_theme'
+  ];
+
+  keysToClear.forEach((key) => localStorage.removeItem(key));
+
+  const themeToggle = document.getElementById('dark-mode-toggle');
+  if (themeToggle) themeToggle.checked = false;
+
+  const khushooToggle = document.getElementById('khushoo-toggle');
+  if (khushooToggle) khushooToggle.checked = true;
+
+  if (typeof initHome === 'function') initHome();
+  if (typeof initQuran === 'function') initQuran();
+
+  showToast('تم إعادة ضبط البيانات بنجاح', '✅');
+}
+
 // ============ Toggle Saves ============
 function loadToggles() {
   const khushoo = localStorage.getItem('almuslim_khushoo');
-  if (khushoo !== null) {
-    document.getElementById('khushoo-toggle').checked = khushoo === 'true';
+  const khushooToggle = document.getElementById('khushoo-toggle');
+  if (khushoo !== null && khushooToggle) {
+    khushooToggle.checked = khushoo === 'true';
   }
 
   const azkarReminder = localStorage.getItem('almuslim_azkarReminder');
-  if (azkarReminder !== null) {
-    document.getElementById('azkar-reminder-toggle').checked = azkarReminder !== 'false';
+  const azkarReminderToggle = document.getElementById('azkar-reminder-toggle');
+  if (azkarReminder !== null && azkarReminderToggle) {
+    azkarReminderToggle.checked = azkarReminder !== 'false';
   }
 }
 

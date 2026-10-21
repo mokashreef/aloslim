@@ -7,24 +7,19 @@ let qiblaBearing = 0;
 
 // ============ Navigation ============
 function navigateTo(page) {
-  // Hide all pages
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
 
-  // Show target page
   const targetPage = document.getElementById(`page-${page}`);
   if (targetPage) {
     targetPage.classList.add('active');
   }
 
-  // Activate nav item
   const navItem = document.querySelector(`.nav-item[data-page="${page}"]`);
   if (navItem) navItem.classList.add('active');
 
-  // Save current page
   localStorage.setItem('almuslim_currentPage', page);
 
-  // Trigger page-specific init
   if (page === 'azkar' && typeof initAzkar === 'function') initAzkar();
   if (page === 'live' && typeof initLive === 'function') initLive();
   if (page === 'settings' && typeof initSettings === 'function') initSettings();
@@ -47,7 +42,6 @@ function closeModal(id) {
   }
 }
 
-// Close modal on overlay click
 document.addEventListener('click', (e) => {
   if (e.target.classList.contains('modal-overlay')) {
     e.target.classList.remove('visible');
@@ -67,6 +61,20 @@ function showToast(text, icon = '✅') {
   setTimeout(() => toast.classList.remove('visible'), 2500);
 }
 
+function attachConnectionStatus() {
+  const updateNetworkState = () => {
+    const online = navigator.onLine;
+    if (online) {
+      showToast('تم الاتصال مرة أخرى', '🌐');
+    } else {
+      showToast('أنت الآن غير متصل بالإنترنت', '📡');
+    }
+  };
+
+  window.addEventListener('online', updateNetworkState);
+  window.addEventListener('offline', updateNetworkState);
+}
+
 // ============ Dark Mode ============
 function initTheme() {
   const saved = localStorage.getItem('almuslim_theme');
@@ -75,7 +83,6 @@ function initTheme() {
     const toggle = document.getElementById('dark-mode-toggle');
     if (toggle) toggle.checked = true;
   } else if (saved === null) {
-    // Auto mode
     const hour = new Date().getHours();
     if (hour >= 19 || hour < 6) {
       document.documentElement.setAttribute('data-theme', 'dark');
@@ -105,7 +112,6 @@ function showKhushoo(prayerName) {
   document.getElementById('khushoo-prayer-name').textContent = prayerName;
   overlay.classList.add('visible');
 
-  // Auto dismiss after 15 seconds
   setTimeout(() => dismissKhushoo(), 15000);
 }
 
@@ -169,7 +175,7 @@ function calculateQibla() {
         window.addEventListener('deviceorientation', qiblaOrientationHandler);
       }
     },
-    (err) => {
+    () => {
       document.getElementById('qibla-label').textContent = 'لم نستطع تحديد موقعك. يرجى السماح بالوصول للموقع.';
     }
   );
@@ -180,12 +186,21 @@ function toDeg(rad) { return rad * 180 / Math.PI; }
 
 // ============ LocalStorage Helpers ============
 function saveData(key, data) {
-  localStorage.setItem(`almuslim_${key}`, JSON.stringify(data));
+  try {
+    localStorage.setItem(`almuslim_${key}`, JSON.stringify(data));
+  } catch (error) {
+    console.warn('Unable to save local data:', error);
+  }
 }
 
 function loadData(key, fallback = null) {
-  const data = localStorage.getItem(`almuslim_${key}`);
-  return data ? JSON.parse(data) : fallback;
+  try {
+    const data = localStorage.getItem(`almuslim_${key}`);
+    return data ? JSON.parse(data) : fallback;
+  } catch (error) {
+    console.warn('Unable to load local data:', error);
+    return fallback;
+  }
 }
 
 // ============ Greeting by Time ============
@@ -210,29 +225,26 @@ function formatTime12(time24) {
 // ============ Initialize App ============
 function initApp() {
   initTheme();
+  attachConnectionStatus();
 
-  // Set greeting
-  document.getElementById('greeting-text').textContent = getGreeting();
+  const greetingText = document.getElementById('greeting-text');
+  if (greetingText) greetingText.textContent = getGreeting();
 
-  // Set miladi date
   const now = new Date();
   const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-  document.getElementById('date-miladi').textContent = now.toLocaleDateString('ar', options);
+  const dateEl = document.getElementById('date-miladi');
+  if (dateEl) dateEl.textContent = now.toLocaleDateString('ar', options);
 
-  // Restore last page
   const lastPage = localStorage.getItem('almuslim_currentPage');
   if (lastPage && lastPage !== 'home') {
     navigateTo(lastPage);
   }
 
-  // Init home page
   if (typeof initHome === 'function') initHome();
 
-  // Register service worker
   if ('serviceWorker' in navigator) {
     navigator.serviceWorker.register('./sw.js').catch(() => {});
   }
 }
 
-// Run on load
 document.addEventListener('DOMContentLoaded', initApp);

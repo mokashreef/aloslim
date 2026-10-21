@@ -2,6 +2,9 @@
    المسلم - App Shell & Core
    ============================================ */
 
+let qiblaOrientationHandler = null;
+let qiblaBearing = 0;
+
 // ============ Navigation ============
 function navigateTo(page) {
   // Hide all pages
@@ -37,12 +40,21 @@ function showModal(id) {
 function closeModal(id) {
   const modal = document.getElementById(id);
   if (modal) modal.classList.remove('visible');
+
+  if (id === 'qibla-modal' && qiblaOrientationHandler) {
+    window.removeEventListener('deviceorientation', qiblaOrientationHandler);
+    qiblaOrientationHandler = null;
+  }
 }
 
 // Close modal on overlay click
 document.addEventListener('click', (e) => {
   if (e.target.classList.contains('modal-overlay')) {
     e.target.classList.remove('visible');
+    if (e.target.id === 'qibla-modal' && qiblaOrientationHandler) {
+      window.removeEventListener('deviceorientation', qiblaOrientationHandler);
+      qiblaOrientationHandler = null;
+    }
   }
 });
 
@@ -123,11 +135,9 @@ function calculateQibla() {
       const lat = pos.coords.latitude;
       const lng = pos.coords.longitude;
 
-      // Kaaba coordinates
       const kaabaLat = 21.4225;
       const kaabaLng = 39.8262;
 
-      // Calculate bearing
       const dLng = toRad(kaabaLng - lng);
       const lat1 = toRad(lat);
       const lat2 = toRad(kaabaLat);
@@ -136,22 +146,27 @@ function calculateQibla() {
       const x = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLng);
       let bearing = toDeg(Math.atan2(y, x));
       bearing = (bearing + 360) % 360;
+      qiblaBearing = bearing;
 
-      // Update compass
       const arrow = document.getElementById('qibla-arrow');
       arrow.style.transform = `translateX(-50%) rotate(${bearing}deg)`;
-      document.getElementById('qibla-label').textContent = `اتجاه القبلة من موقعك`;
+      document.getElementById('qibla-label').textContent = 'اتجاه القبلة من موقعك';
       document.getElementById('qibla-degree').textContent = `${bearing.toFixed(1)}° من الشمال`;
 
-      // Try device orientation for live compass
       if (window.DeviceOrientationEvent) {
-        window.addEventListener('deviceorientation', (e) => {
+        if (qiblaOrientationHandler) {
+          window.removeEventListener('deviceorientation', qiblaOrientationHandler);
+        }
+
+        qiblaOrientationHandler = (e) => {
           if (e.alpha !== null) {
             const heading = e.alpha;
-            const adjustedBearing = bearing - heading;
+            const adjustedBearing = qiblaBearing - heading;
             arrow.style.transform = `translateX(-50%) rotate(${adjustedBearing}deg)`;
           }
-        });
+        };
+
+        window.addEventListener('deviceorientation', qiblaOrientationHandler);
       }
     },
     (err) => {
@@ -215,7 +230,7 @@ function initApp() {
 
   // Register service worker
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('sw.js').catch(() => {});
+    navigator.serviceWorker.register('./sw.js').catch(() => {});
   }
 }
 

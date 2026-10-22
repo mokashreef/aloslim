@@ -1,156 +1,172 @@
-/* ============================================
-   المسلم - Live Quran Streaming
-   ============================================ */
-
 let liveAudio = new Audio();
-let currentStation = null;
+let currentStationId = null;
 let liveInitialized = false;
 
-const RADIO_STATIONS = [
+const LIVE_STATIONS = [
   {
-    id: 'quran-radio',
-    name: 'إذاعة القرآن الكريم',
-    desc: 'بث مباشر 24/7',
+    id: 'general-radio',
+    name: 'إذاعة القرآن الكريم العامة',
+    desc: 'تلاوات خاشعة على مدار الساعة',
     url: 'https://Qurango.net/radio/tarateel',
-    icon: '🕌'
+    icon: 'radio'
   },
   {
-    id: 'alafasy',
-    name: 'مشاري العفاسي',
-    desc: 'تلاوات خاشعة',
+    id: 'alafasy-radio',
+    name: 'مشاري بن راشد العفاسي',
+    desc: 'تلاوة برواية حفص عن عاصم',
     url: 'https://Qurango.net/radio/mishary_alafasy',
-    icon: '🎙️'
+    icon: 'mic'
   },
   {
-    id: 'sudais',
+    id: 'sudais-radio',
     name: 'عبد الرحمن السديس',
-    desc: 'إمام الحرم المكي',
+    desc: 'إمام وخطيب المسجد الحرام',
     url: 'https://Qurango.net/radio/abdurrahman_alsudais',
-    icon: '🕋'
+    icon: 'mosque'
   },
   {
-    id: 'shuraim',
+    id: 'shuraim-radio',
     name: 'سعود الشريم',
-    desc: 'إمام الحرم المكي',
+    desc: 'تلاوات الحرم المكي الشريف',
     url: 'https://Qurango.net/radio/saoud_shuraim',
-    icon: '🌙'
+    icon: 'mosque'
   },
   {
-    id: 'husary',
+    id: 'husary-radio',
     name: 'محمود خليل الحصري',
-    desc: 'رواية حفص عن عاصم',
+    desc: 'شيخ عموم المقارئ المصرية (مرتل)',
     url: 'https://Qurango.net/radio/mahmoud_khalil_alhussary',
-    icon: '📚'
+    icon: 'quran'
   },
   {
-    id: 'minshawi',
+    id: 'minshawi-radio',
     name: 'محمد صديق المنشاوي',
-    desc: 'تلاوات مجودة',
+    desc: 'تلاوات قرآنية مجودة',
     url: 'https://Qurango.net/radio/muhammad_siddiq_alminshawi',
-    icon: '✨'
+    icon: 'quran'
   },
   {
-    id: 'abdulbasit',
+    id: 'abdulbasit-radio',
     name: 'عبد الباسط عبد الصمد',
-    desc: 'تلاوة مرتلة',
+    desc: 'المصحف المرتل برواية حفص',
     url: 'https://Qurango.net/radio/abdulbasit_abdulsamad',
-    icon: '🌟'
+    icon: 'mic'
   },
   {
-    id: 'maher',
+    id: 'maher-radio',
     name: 'ماهر المعيقلي',
-    desc: 'إمام الحرم المكي',
+    desc: 'تلاوات الحرم المكي الشريف',
     url: 'https://Qurango.net/radio/maher_almuaiqly',
-    icon: '💫'
+    icon: 'mosque'
   },
   {
-    id: 'ajamy',
-    name: 'أحمد العجمي',
-    desc: 'تلاوات مميزة',
+    id: 'ajamy-radio',
+    name: 'أحمد بن علي العجمي',
+    desc: 'المصحف المرتل برواية حفص',
     url: 'https://Qurango.net/radio/ahmed_alajamy',
-    icon: '🎶'
+    icon: 'mic'
   },
   {
-    id: 'huzaify',
-    name: 'علي الحذيفي',
-    desc: 'إمام المسجد النبوي',
+    id: 'huzaify-radio',
+    name: 'علي بن عبد الرحمن الحذيفي',
+    desc: 'إمام وخطيب المسجد النبوي الشريف',
     url: 'https://Qurango.net/radio/ali_alhuzaify',
-    icon: '🕌'
+    icon: 'mosque'
   }
 ];
 
 function initLive() {
   if (liveInitialized) return;
   liveInitialized = true;
-  renderStations();
+  renderLiveStations();
+  initVolumeControls();
 }
 
-function renderStations() {
-  const container = document.getElementById('radio-stations');
+function renderLiveStations() {
+  const container = document.getElementById('radio-stations-list');
+  if (!container) return;
+
   container.innerHTML = '';
+  LIVE_STATIONS.forEach(station => {
+    const isPlaying = currentStationId === station.id && !liveAudio.paused;
 
-  RADIO_STATIONS.forEach(station => {
-    const div = document.createElement('div');
-    div.className = `radio-station ${currentStation === station.id ? 'playing' : ''}`;
-    div.id = `station-${station.id}`;
-    div.onclick = () => playStation(station);
+    const card = document.createElement('div');
+    card.className = `radio-station-card ${currentStationId === station.id ? 'active' : ''}`;
+    card.id = `station-${station.id}`;
+    card.onclick = () => toggleStation(station);
 
-    div.innerHTML = `
-      <div class="station-icon">${station.icon}</div>
-      <div class="station-info">
-        <div class="station-name">${station.name}</div>
-        <div class="station-desc">${station.desc}</div>
+    card.innerHTML = `
+      <div class="station-icon-wrap">
+        ${getIcon(station.icon, '', 20)}
       </div>
-      <button class="station-play-btn">
-        ${currentStation === station.id ? '⏸' : '▶'}
+      <div class="station-details">
+        <div class="station-title">${station.name}</div>
+        <div class="station-subtitle">${station.desc}</div>
+      </div>
+      <button class="station-play-toggle">
+        ${getIcon(isPlaying ? 'pause' : 'play', '', 18)}
       </button>
     `;
 
-    container.appendChild(div);
+    container.appendChild(card);
   });
 }
 
-function playStation(station) {
-  // If same station, toggle play/pause
-  if (currentStation === station.id) {
+function toggleStation(station) {
+  const heroPlayingTitle = document.getElementById('live-now-playing-title');
+  const waveform = document.getElementById('live-waveform');
+
+  if (currentStationId === station.id) {
     if (liveAudio.paused) {
       liveAudio.play().catch(() => {});
-      document.getElementById('waveform').classList.remove('paused');
+      if (waveform) waveform.classList.remove('paused');
     } else {
       liveAudio.pause();
-      document.getElementById('waveform').classList.add('paused');
+      if (waveform) waveform.classList.add('paused');
     }
-    renderStations();
+    renderLiveStations();
     return;
   }
 
-  // Stop previous
+  if (typeof quranAudio !== 'undefined' && !quranAudio.paused) {
+    quranAudio.pause();
+  }
+
   liveAudio.pause();
-
-  // Play new station
-  currentStation = station.id;
+  currentStationId = station.id;
   liveAudio.src = station.url;
-  liveAudio.volume = document.getElementById('volume-slider').value / 100;
-  liveAudio.play().catch(() => {
-    showToast('تعذّر تشغيل البث. حاول مرة أخرى.', '⚠️');
-  });
 
-  // Update UI
-  document.getElementById('live-now-playing').textContent = `🎧 ${station.name}`;
-  document.getElementById('waveform').classList.remove('paused');
-  renderStations();
+  const slider = document.getElementById('live-volume-slider');
+  if (slider) liveAudio.volume = slider.value / 100;
 
-  // Handle errors
+  liveAudio.play()
+    .then(() => {
+      if (heroPlayingTitle) heroPlayingTitle.textContent = station.name;
+      if (waveform) waveform.classList.remove('paused');
+      renderLiveStations();
+      showToast(`تم بدء البث: ${station.name}`, 'radio');
+    })
+    .catch(() => {
+      showToast('تعذر الاتصال بالبث المباشر. حاول لاحقاً.', 'warning');
+      if (waveform) waveform.classList.add('paused');
+    });
+
   liveAudio.onerror = () => {
-    showToast('تعذّر الاتصال بالبث', '⚠️');
-    document.getElementById('waveform').classList.add('paused');
+    showToast('انقطع البث أو الخادم غير متاح', 'warning');
+    if (waveform) waveform.classList.add('paused');
+    renderLiveStations();
   };
 }
 
-function setVolume(value) {
-  liveAudio.volume = value / 100;
-  // Also set quran audio volume
-  if (typeof quranAudio !== 'undefined') {
-    quranAudio.volume = value / 100;
-  }
+function initVolumeControls() {
+  const slider = document.getElementById('live-volume-slider');
+  if (!slider) return;
+
+  slider.oninput = (e) => {
+    const val = e.target.value / 100;
+    liveAudio.volume = val;
+    if (typeof quranAudio !== 'undefined') {
+      quranAudio.volume = val;
+    }
+  };
 }

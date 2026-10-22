@@ -1,0 +1,23 @@
+# IDE & System Files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Flutter & Dart (APP directory)
+APP/.dart_tool/
+APP/.flutter-plugins
+APP/.flutter-plugins-dependencies
+APP/.packages
+APP/build/
+APP/.pub-cache/
+APP/.pub/
+
+# Logs & Environment
+*.log
+.env
+.env.local

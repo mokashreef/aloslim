@@ -1,11 +1,41 @@
-/* ============================================
-   المسلم - App Shell & Core
-   ============================================ */
+let audioCtx = null;
 
-let qiblaOrientationHandler = null;
-let qiblaBearing = 0;
+function getAudioContext() {
+  if (!audioCtx) {
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    if (AudioContext) {
+      audioCtx = new AudioContext();
+    }
+  }
+  if (audioCtx && audioCtx.state === 'suspended') {
+    audioCtx.resume();
+  }
+  return audioCtx;
+}
 
-// ============ Navigation ============
+function playClickSound() {
+  try {
+    const ctx = getAudioContext();
+    if (!ctx) return;
+
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(650, ctx.currentTime);
+    osc.frequency.exponentialRampToValueAtTime(140, ctx.currentTime + 0.035);
+
+    gain.gain.setValueAtTime(0.2, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.035);
+
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+
+    osc.start();
+    osc.stop(ctx.currentTime + 0.04);
+  } catch (e) {}
+}
+
 function navigateTo(page) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
@@ -13,6 +43,9 @@ function navigateTo(page) {
   const targetPage = document.getElementById(`page-${page}`);
   if (targetPage) {
     targetPage.classList.add('active');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    const appEl = document.getElementById('app');
+    if (appEl) appEl.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   const navItem = document.querySelector(`.nav-item[data-page="${page}"]`);
@@ -20,74 +53,79 @@ function navigateTo(page) {
 
   localStorage.setItem('almuslim_currentPage', page);
 
-  if (page === 'azkar' && typeof initAzkar === 'function') initAzkar();
-  if (page === 'live' && typeof initLive === 'function') initLive();
-  if (page === 'settings' && typeof initSettings === 'function') initSettings();
+  if (page === 'home' && typeof initHome === 'function') initHome();
   if (page === 'quran' && typeof initQuran === 'function') initQuran();
+  if (page === 'azkar' && typeof initAzkar === 'function') initAzkar();
+  if (page === 'tasbih' && typeof initTasbih === 'function') initTasbih();
+  if (page === 'more' && typeof initSettings === 'function') initSettings();
 }
 
-// ============ Modal Helpers ============
 function showModal(id) {
   const modal = document.getElementById(id);
-  if (modal) modal.classList.add('visible');
+  if (modal) {
+    modal.classList.add('visible');
+    document.body.style.overflow = 'hidden';
+  }
 }
 
 function closeModal(id) {
   const modal = document.getElementById(id);
-  if (modal) modal.classList.remove('visible');
-
-  if (id === 'qibla-modal' && qiblaOrientationHandler) {
-    window.removeEventListener('deviceorientation', qiblaOrientationHandler);
-    qiblaOrientationHandler = null;
+  if (modal) {
+    modal.classList.remove('visible');
+    document.body.style.overflow = '';
   }
 }
 
 document.addEventListener('click', (e) => {
   if (e.target.classList.contains('modal-overlay')) {
     e.target.classList.remove('visible');
-    if (e.target.id === 'qibla-modal' && qiblaOrientationHandler) {
-      window.removeEventListener('deviceorientation', qiblaOrientationHandler);
-      qiblaOrientationHandler = null;
-    }
+    document.body.style.overflow = '';
   }
 });
 
-// ============ Toast Notifications ============
-function showToast(text, icon = '✅') {
+let toastTimeout = null;
+
+function showToast(text, iconName = 'check') {
   const toast = document.getElementById('toast');
-  document.getElementById('toast-icon').textContent = icon;
-  document.getElementById('toast-text').textContent = text;
+  const iconEl = document.getElementById('toast-icon');
+  const textEl = document.getElementById('toast-text');
+
+  if (!toast) return;
+
+  if (iconEl && typeof getIcon === 'function') {
+    iconEl.innerHTML = getIcon(iconName, '', 20);
+  }
+  if (textEl) {
+    textEl.textContent = text;
+  }
+
   toast.classList.add('visible');
-  setTimeout(() => toast.classList.remove('visible'), 2500);
+
+  if (toastTimeout) clearTimeout(toastTimeout);
+  toastTimeout = setTimeout(() => {
+    toast.classList.remove('visible');
+  }, 2600);
 }
 
-function attachConnectionStatus() {
-  const updateNetworkState = () => {
-    const online = navigator.onLine;
-    if (online) {
-      showToast('تم الاتصال مرة أخرى', '🌐');
-    } else {
-      showToast('أنت الآن غير متصل بالإنترنت', '📡');
-    }
-  };
-
-  window.addEventListener('online', updateNetworkState);
-  window.addEventListener('offline', updateNetworkState);
-}
-
-// ============ Dark Mode ============
 function initTheme() {
   const saved = localStorage.getItem('almuslim_theme');
+  const toggle = document.getElementById('dark-mode-toggle');
+
   if (saved === 'dark') {
     document.documentElement.setAttribute('data-theme', 'dark');
-    const toggle = document.getElementById('dark-mode-toggle');
     if (toggle) toggle.checked = true;
-  } else if (saved === null) {
+  } else if (saved === 'light') {
+    document.documentElement.removeAttribute('data-theme');
+    if (toggle) toggle.checked = false;
+  } else {
+    const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
     const hour = new Date().getHours();
-    if (hour >= 19 || hour < 6) {
+    if (prefersDark || hour >= 19 || hour < 6) {
       document.documentElement.setAttribute('data-theme', 'dark');
-      const toggle = document.getElementById('dark-mode-toggle');
       if (toggle) toggle.checked = true;
+    } else {
+      document.documentElement.removeAttribute('data-theme');
+      if (toggle) toggle.checked = false;
     }
   }
 }
@@ -97,153 +135,92 @@ function toggleDarkMode() {
   if (isDark) {
     document.documentElement.removeAttribute('data-theme');
     localStorage.setItem('almuslim_theme', 'light');
+    showToast('تم تفعيل المظهر النهاري', 'sun');
   } else {
     document.documentElement.setAttribute('data-theme', 'dark');
     localStorage.setItem('almuslim_theme', 'dark');
+    showToast('تم تفعيل المظهر الليلي', 'moon');
   }
 }
 
-// ============ Khushoo Mode ============
 function showKhushoo(prayerName) {
   const enabled = localStorage.getItem('almuslim_khushoo') !== 'false';
   if (!enabled) return;
 
   const overlay = document.getElementById('khushoo-overlay');
-  document.getElementById('khushoo-prayer-name').textContent = prayerName;
-  overlay.classList.add('visible');
+  const titleEl = document.getElementById('khushoo-prayer-name');
+  if (titleEl) titleEl.textContent = `حان الآن وقت صلاة ${prayerName}`;
+  if (overlay) overlay.classList.add('visible');
 
-  setTimeout(() => dismissKhushoo(), 15000);
+  setTimeout(() => dismissKhushoo(), 25000);
 }
 
 function dismissKhushoo() {
-  document.getElementById('khushoo-overlay').classList.remove('visible');
+  const overlay = document.getElementById('khushoo-overlay');
+  if (overlay) overlay.classList.remove('visible');
 }
 
 function toggleKhushooMode() {
   const toggle = document.getElementById('khushoo-toggle');
-  localStorage.setItem('almuslim_khushoo', toggle.checked);
-}
-
-// ============ Qibla Direction ============
-function showQibla() {
-  showModal('qibla-modal');
-  calculateQibla();
-}
-
-function calculateQibla() {
-  if (!navigator.geolocation) {
-    document.getElementById('qibla-label').textContent = 'المتصفح لا يدعم تحديد الموقع';
-    return;
+  if (toggle) {
+    localStorage.setItem('almuslim_khushoo', toggle.checked);
+    showToast(toggle.checked ? 'تم تفعيل وضع الخشوع' : 'تم تعطيل وضع الخشوع', 'bell');
   }
-
-  navigator.geolocation.getCurrentPosition(
-    (pos) => {
-      const lat = pos.coords.latitude;
-      const lng = pos.coords.longitude;
-
-      const kaabaLat = 21.4225;
-      const kaabaLng = 39.8262;
-
-      const dLng = toRad(kaabaLng - lng);
-      const lat1 = toRad(lat);
-      const lat2 = toRad(kaabaLat);
-
-      const y = Math.sin(dLng) * Math.cos(lat2);
-      const x = Math.cos(lat1) * Math.sin(lat2) - Math.sin(lat1) * Math.cos(lat2) * Math.cos(dLng);
-      let bearing = toDeg(Math.atan2(y, x));
-      bearing = (bearing + 360) % 360;
-      qiblaBearing = bearing;
-
-      const arrow = document.getElementById('qibla-arrow');
-      arrow.style.transform = `translateX(-50%) rotate(${bearing}deg)`;
-      document.getElementById('qibla-label').textContent = 'اتجاه القبلة من موقعك';
-      document.getElementById('qibla-degree').textContent = `${bearing.toFixed(1)}° من الشمال`;
-
-      if (window.DeviceOrientationEvent) {
-        if (qiblaOrientationHandler) {
-          window.removeEventListener('deviceorientation', qiblaOrientationHandler);
-        }
-
-        qiblaOrientationHandler = (e) => {
-          if (e.alpha !== null) {
-            const heading = e.alpha;
-            const adjustedBearing = qiblaBearing - heading;
-            arrow.style.transform = `translateX(-50%) rotate(${adjustedBearing}deg)`;
-          }
-        };
-
-        window.addEventListener('deviceorientation', qiblaOrientationHandler);
-      }
-    },
-    () => {
-      document.getElementById('qibla-label').textContent = 'لم نستطع تحديد موقعك. يرجى السماح بالوصول للموقع.';
-    }
-  );
 }
 
-function toRad(deg) { return deg * Math.PI / 180; }
-function toDeg(rad) { return rad * 180 / Math.PI; }
-
-// ============ LocalStorage Helpers ============
 function saveData(key, data) {
   try {
     localStorage.setItem(`almuslim_${key}`, JSON.stringify(data));
-  } catch (error) {
-    console.warn('Unable to save local data:', error);
-  }
+  } catch (e) {}
 }
 
 function loadData(key, fallback = null) {
   try {
     const data = localStorage.getItem(`almuslim_${key}`);
     return data ? JSON.parse(data) : fallback;
-  } catch (error) {
-    console.warn('Unable to load local data:', error);
+  } catch (e) {
     return fallback;
   }
 }
 
-// ============ Greeting by Time ============
 function getGreeting() {
   const hour = new Date().getHours();
-  if (hour >= 3 && hour < 12) return 'صباح الخير ☀️';
-  if (hour >= 12 && hour < 17) return 'مساء النور 🌤️';
-  if (hour >= 17 && hour < 21) return 'مساء الخير 🌇';
-  return 'طابت ليلتك 🌙';
+  if (hour >= 3 && hour < 12) return 'صباح الخير والبركة';
+  if (hour >= 12 && hour < 17) return 'طاب يومكم بذكر الله';
+  if (hour >= 17 && hour < 21) return 'مساء الخير والسكينة';
+  return 'طابت ليلتكم بذكر الرحمن';
 }
 
-// ============ Format Time ============
 function formatTime12(time24) {
-  if (!time24) return '--:--';
-  const [hours, minutes] = time24.split(':');
-  let h = parseInt(hours);
+  if (!time24 || time24 === '--:--') return '--:--';
+  const parts = time24.split(':');
+  let h = parseInt(parts[0]);
+  const m = parts[1];
   const ampm = h >= 12 ? 'م' : 'ص';
   h = h % 12 || 12;
-  return `${h}:${minutes} ${ampm}`;
+  return `${h}:${m} ${ampm}`;
 }
 
-// ============ Initialize App ============
 function initApp() {
   initTheme();
-  attachConnectionStatus();
 
-  const greetingText = document.getElementById('greeting-text');
-  if (greetingText) greetingText.textContent = getGreeting();
+  const greetingEl = document.getElementById('greeting-text');
+  if (greetingEl) greetingEl.textContent = getGreeting();
 
   const now = new Date();
   const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-  const dateEl = document.getElementById('date-miladi');
-  if (dateEl) dateEl.textContent = now.toLocaleDateString('ar', options);
-
-  const lastPage = localStorage.getItem('almuslim_currentPage');
-  if (lastPage && lastPage !== 'home') {
-    navigateTo(lastPage);
+  const dateMiladiEl = document.getElementById('date-miladi');
+  if (dateMiladiEl) {
+    dateMiladiEl.textContent = now.toLocaleDateString('ar-SA', options);
   }
+
+  const lastPage = localStorage.getItem('almuslim_currentPage') || 'home';
+  navigateTo(lastPage);
 
   if (typeof initHome === 'function') initHome();
 
   if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('./sw.js').catch(() => {});
+    navigator.serviceWorker.register('sw.js').catch(() => {});
   }
 }
 

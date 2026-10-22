@@ -1,25 +1,24 @@
 {
   "name": "المسلم",
   "short_name": "المسلم",
-  "description": "تطبيق إسلامي شامل - مواقيت الصلاة، القرآن الكريم، الأذكار، والمزيد",
-  "start_url": "./",
-  "scope": "./",
+  "description": "تطبيق إسلامي شامل - مواقيت الصلاة، القرآن الكريم، الأذكار، والمسبحة الإلكترونية",
+  "start_url": "./index.html",
   "display": "standalone",
   "orientation": "portrait",
   "dir": "rtl",
   "lang": "ar",
-  "theme_color": "#1B5E20",
-  "background_color": "#FDF8F0",
+  "theme_color": "#064e3b",
+  "background_color": "#091713",
   "categories": ["lifestyle", "education"],
   "icons": [
     {
-      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='128' fill='%231B5E20'/%3E%3Ctext x='256' y='320' text-anchor='middle' font-size='280' font-family='Arial' fill='white'%3E🕌%3C/text%3E%3C/svg%3E",
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' rx='128' fill='%23064e3b'/%3E%3Cpath d='M256 120c-75.1 0-136 60.9-136 136s60.9 136 136 136c42.8 0 81.1-19.8 106.1-50.8-12.8 5.7-27 8.8-42.1 8.8-59.6 0-108-48.4-108-108s48.4-108 108-108c15.1 0 29.3 3.1 42.1 8.8-25-31-63.3-50.8-106.1-50.8z' fill='%23fbbf24'/%3E%3Cpolygon points='340,190 352,218 382,220 359,239 366,268 340,252 314,268 321,239 298,220 328,218' fill='%23ffffff'/%3E%3C/svg%3E",
       "sizes": "512x512",
       "type": "image/svg+xml",
       "purpose": "any maskable"
     },
     {
-      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' rx='48' fill='%231B5E20'/%3E%3Ctext x='96' y='125' text-anchor='middle' font-size='110' font-family='Arial' fill='white'%3E🕌%3C/text%3E%3C/svg%3E",
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' rx='48' fill='%23064e3b'/%3E%3Cpath d='M96 45c-28.2 0-51 22.8-51 51s22.8 51 51 51c16 0 30.4-7.4 39.8-19-4.8 2.1-10.1 3.3-15.8 3.3-22.4 0-40.5-18.1-40.5-40.5S97.6 50.3 120 50.3c5.7 0 11 1.2 15.8 3.3C126.4 52.4 112 45 96 45z' fill='%23fbbf24'/%3E%3Cpolygon points='128,71 132,82 143,83 135,90 137,101 128,95 118,101 121,90 112,83 123,82' fill='%23ffffff'/%3E%3C/svg%3E",
       "sizes": "192x192",
       "type": "image/svg+xml",
       "purpose": "any maskable"

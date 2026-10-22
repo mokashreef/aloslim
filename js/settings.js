@@ -1,171 +1,176 @@
-/* ============================================
-   المسلم - Settings & Extra Features
-   ============================================ */
-
 let settingsInitialized = false;
 
 function initSettings() {
   if (settingsInitialized) return;
   settingsInitialized = true;
 
-  loadIntention();
-  loadMadhab();
-  loadWorshipLog();
-  loadToggles();
-  updateAppInfo();
+  loadPrayerMethodOptions();
+  loadIntentionNote();
+  loadWorshipLogGrid();
+  loadSettingToggles();
+  renderSettingsIcons();
+
+  if (typeof initLive === 'function') initLive();
+  if (typeof initQibla === 'function') initQibla();
 }
 
-// ============ Daily Intention ============
-function loadIntention() {
-  const today = new Date().toDateString();
-  const saved = loadData('intention', { date: '', text: '' });
+function renderSettingsIcons() {
+  const iconTargets = [
+    { id: 'settings-icon-theme', icon: 'moon' },
+    { id: 'settings-icon-method', icon: 'clock' },
+    { id: 'settings-icon-madhab', icon: 'mosque' },
+    { id: 'settings-icon-city', icon: 'mapPin' },
+    { id: 'settings-icon-khushoo', icon: 'bell' },
+    { id: 'settings-icon-sound', icon: 'audioSound' },
+    { id: 'settings-icon-vibrate', icon: 'vibrate' },
+    { id: 'settings-icon-about', icon: 'info' }
+  ];
 
-  if (saved.date === today) {
-    const el = document.getElementById('intention-input');
-    if (el) el.value = saved.text;
-  }
-}
-
-function saveIntention() {
-  const text = document.getElementById('intention-input').value;
-  saveData('intention', {
-    date: new Date().toDateString(),
-    text: text
+  iconTargets.forEach(t => {
+    const el = document.getElementById(t.id);
+    if (el && typeof getIcon === 'function') {
+      el.innerHTML = getIcon(t.icon, '', 20);
+    }
   });
 }
 
-// ============ Madhab ============
-function loadMadhab() {
-  const madhab = localStorage.getItem('almuslim_madhab') || '0';
-  const el = document.getElementById('madhab-select');
-  if (el) el.value = madhab;
-}
+function loadPrayerMethodOptions() {
+  const select = document.getElementById('calc-method-select');
+  if (!select || typeof PrayTimes === 'undefined') return;
 
-function saveMadhab() {
-  const madhab = document.getElementById('madhab-select').value;
-  localStorage.setItem('almuslim_madhab', madhab);
-  localStorage.removeItem('almuslim_prayerTimesCache');
-  showToast('تم تحديث المذهب. سيتم تحديث المواقيت.', '🕌');
-  if (typeof fetchPrayerTimes === 'function') fetchPrayerTimes();
-}
+  const methods = PrayTimes.getMethods();
+  const current = localStorage.getItem('almuslim_prayer_method') || PrayTimes.getMethod();
 
-function refreshPrayerTimes() {
-  localStorage.removeItem('almuslim_prayerTimesCache');
-  if (typeof fetchPrayerTimes === 'function') {
-    fetchPrayerTimes();
-    showToast('جارٍ تحديث مواقيت الصلاة', '🔄');
+  select.innerHTML = '';
+  Object.keys(methods).forEach(key => {
+    const opt = document.createElement('option');
+    opt.value = key;
+    opt.textContent = methods[key].name;
+    if (key === current) opt.selected = true;
+    select.appendChild(opt);
+  });
+
+  select.onchange = () => {
+    const val = select.value;
+    localStorage.setItem('almuslim_prayer_method', val);
+    if (typeof PrayTimes !== 'undefined') PrayTimes.setMethod(val);
+    localStorage.removeItem('almuslim_prayerTimesCache');
+    showToast('تم حفظ طريقة الحساب وتحديث المواقيت', 'check');
+    if (typeof fetchPrayerTimes === 'function') fetchPrayerTimes();
+  };
+
+  const madhabSelect = document.getElementById('madhab-select');
+  if (madhabSelect) {
+    const savedMadhab = localStorage.getItem('almuslim_madhab') || '0';
+    madhabSelect.value = savedMadhab;
+    madhabSelect.onchange = () => {
+      localStorage.setItem('almuslim_madhab', madhabSelect.value);
+      if (typeof PrayTimes !== 'undefined') {
+        PrayTimes.setAsrMadhab(madhabSelect.value);
+      }
+      localStorage.removeItem('almuslim_prayerTimesCache');
+      showToast('تم تحديث المذهب الفقهي', 'check');
+      if (typeof fetchPrayerTimes === 'function') fetchPrayerTimes();
+    };
   }
 }
 
-// ============ Worship Log ============
-function loadWorshipLog() {
-  const log = loadData('worshipLog', {});
-  const container = document.getElementById('worship-log');
+function loadIntentionNote() {
+  const textarea = document.getElementById('intention-input');
+  if (!textarea) return;
+
+  const today = new Date().toDateString();
+  const saved = loadData('dailyIntention', { date: '', text: '' });
+
+  if (saved.date === today) {
+    textarea.value = saved.text;
+  }
+}
+
+function saveIntentionNote() {
+  const textarea = document.getElementById('intention-input');
+  if (!textarea) return;
+
+  saveData('dailyIntention', {
+    date: new Date().toDateString(),
+    text: textarea.value
+  });
+}
+
+function loadWorshipLogGrid() {
+  const container = document.getElementById('worship-log-grid');
   if (!container) return;
+
+  const log = loadData('worshipLogMap', {});
   container.innerHTML = '';
 
   const today = new Date();
   for (let i = 27; i >= 0; i--) {
-    const date = new Date(today);
-    date.setDate(date.getDate() - i);
-    const key = date.toDateString();
-    const dayNum = date.getDate();
+    const d = new Date(today);
+    d.setDate(d.getDate() - i);
+    const key = d.toDateString();
+    const dayNumber = d.getDate();
 
-    const div = document.createElement('div');
-    div.className = 'worship-day';
-
+    const cell = document.createElement('button');
+    cell.className = 'worship-day-cell';
     if (log[key] === 'full') {
-      div.className += ' active';
+      cell.classList.add('level-full');
     } else if (log[key] === 'partial') {
-      div.className += ' partial';
+      cell.classList.add('level-partial');
     }
 
     if (i === 0) {
-      div.style.fontWeight = '800';
+      cell.classList.add('today');
     }
 
-    div.textContent = dayNum;
-    div.onclick = () => toggleWorshipDay(key, div);
-    container.appendChild(div);
+    cell.textContent = dayNumber;
+    cell.onclick = () => toggleWorshipDayStatus(key, cell);
+
+    container.appendChild(cell);
   }
 }
 
-function toggleWorshipDay(key, element) {
-  const log = loadData('worshipLog', {});
+function toggleWorshipDayStatus(dateKey, cellElement) {
+  const log = loadData('worshipLogMap', {});
 
-  if (!log[key]) {
-    log[key] = 'partial';
-    element.className = 'worship-day partial';
-  } else if (log[key] === 'partial') {
-    log[key] = 'full';
-    element.className = 'worship-day active';
+  if (!log[dateKey]) {
+    log[dateKey] = 'partial';
+    cellElement.className = 'worship-day-cell level-partial';
+  } else if (log[dateKey] === 'partial') {
+    log[dateKey] = 'full';
+    cellElement.className = 'worship-day-cell level-full';
   } else {
-    delete log[key];
-    element.className = 'worship-day';
+    delete log[dateKey];
+    cellElement.className = 'worship-day-cell';
   }
 
-  saveData('worshipLog', log);
+  saveData('worshipLogMap', log);
 }
 
-function updateAppInfo() {
-  const appVersionEl = document.getElementById('app-version');
-  if (appVersionEl) {
-    appVersionEl.textContent = 'الإصدار 1.1.0';
-  }
-
-  const lastSyncEl = document.getElementById('last-sync');
-  if (lastSyncEl) {
-    const now = new Date();
-    lastSyncEl.textContent = `آخر تحديث: ${now.toLocaleTimeString('ar', { hour: '2-digit', minute: '2-digit' })}`;
-  }
-}
-
-function resetAppData() {
-  const keysToClear = [
-    'almuslim_prayerTimesCache',
-    'almuslim_intention',
-    'almuslim_worshipLog',
-    'almuslim_lastSurah',
-    'almuslim_readingStats',
-    'almuslim_khushoo',
-    'almuslim_azkarReminder',
-    'almuslim_currentPage',
-    'almuslim_theme'
-  ];
-
-  keysToClear.forEach((key) => localStorage.removeItem(key));
-
-  const themeToggle = document.getElementById('dark-mode-toggle');
-  if (themeToggle) themeToggle.checked = false;
-
+function loadSettingToggles() {
   const khushooToggle = document.getElementById('khushoo-toggle');
-  if (khushooToggle) khushooToggle.checked = true;
-
-  if (typeof initHome === 'function') initHome();
-  if (typeof initQuran === 'function') initQuran();
-
-  showToast('تم إعادة ضبط البيانات بنجاح', '✅');
-}
-
-// ============ Toggle Saves ============
-function loadToggles() {
-  const khushoo = localStorage.getItem('almuslim_khushoo');
-  const khushooToggle = document.getElementById('khushoo-toggle');
-  if (khushoo !== null && khushooToggle) {
-    khushooToggle.checked = khushoo === 'true';
+  if (khushooToggle) {
+    const val = localStorage.getItem('almuslim_khushoo');
+    khushooToggle.checked = val !== 'false';
   }
 
-  const azkarReminder = localStorage.getItem('almuslim_azkarReminder');
-  const azkarReminderToggle = document.getElementById('azkar-reminder-toggle');
-  if (azkarReminder !== null && azkarReminderToggle) {
-    azkarReminderToggle.checked = azkarReminder !== 'false';
+  const soundToggle = document.getElementById('sound-click-toggle');
+  if (soundToggle) {
+    const val = localStorage.getItem('almuslim_sound_click');
+    soundToggle.checked = val !== 'false';
+    soundToggle.onchange = () => {
+      localStorage.setItem('almuslim_sound_click', soundToggle.checked);
+      showToast(soundToggle.checked ? 'تم تفعيل صوت النقر' : 'تم كتم الصوت', 'audioSound');
+    };
   }
-}
 
-function toggleAzkarReminder() {
-  const toggle = document.getElementById('azkar-reminder-toggle');
-  localStorage.setItem('almuslim_azkarReminder', toggle.checked);
-  if (toggle.checked) {
-    showToast('تم تفعيل تذكير الأذكار', '🔔');
+  const vibrateToggle = document.getElementById('vibrate-toggle');
+  if (vibrateToggle) {
+    const val = localStorage.getItem('almuslim_vibrate_global');
+    vibrateToggle.checked = val !== 'false';
+    vibrateToggle.onchange = () => {
+      localStorage.setItem('almuslim_vibrate_global', vibrateToggle.checked);
+      showToast(vibrateToggle.checked ? 'تم تفعيل الاهتزاز' : 'تم تعطيل الاهتزاز', 'vibrate');
+    };
   }
 }
